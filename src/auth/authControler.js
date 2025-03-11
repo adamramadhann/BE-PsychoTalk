@@ -1,0 +1,337 @@
+import { request, response } from "express";
+import db from "../conn";
+import { passwordHash } from "./hashes";
+import { sendEmail } from "../config/nodeMailer";
+import crypto from 'crypto';
+import bcrypt from "bcrypt"
+import jwt from "jsonwebtoken"
+
+class  AuthController {
+  
+  async register(req = request, res = response) {
+    const { name, email, password, role } = req.body;
+  
+    try {
+      if (!email || !password || !name) {
+        return res.status(400).json({
+          status: false,
+          message: "Semua field harus diisi",
+        });
+      }
+  
+      const existingUser = await db.user.findUnique({ where: { email } });
+      if (existingUser) {
+        return res.status(400).json({
+          status: false,
+          message: "Email sudah terdaftar",
+        });
+      }
+  
+      const existingPendingUser = await db.pendingUser.findUnique({
+        where: { email }
+      });
+  
+      if (existingPendingUser) {
+        return res.status(400).json({
+          status: false,
+          message: "Email sudah terdaftar dan sedang menunggu verifikasi",
+        });
+      }
+  
+      const hashedPassword = await passwordHash(password);
+  
+      const verificationToken = crypto.randomBytes(32).toString("hex");
+  
+      const newUser = await db.pendingUser.create({
+        data: {
+          email,
+          password: hashedPassword,
+          name,
+          role,
+          verificationToken
+        }
+      });
+  
+      const verificationLink = `http://localhost:8000/api/verify-email?verificationToken=${verificationToken}`;
+      const emailContent = `
+        <p>Halo ${name},</p>
+        <p>Terima kasih telah mendaftar. Klik link di bawah untuk verifikasi email Anda:</p>
+        <a href="${verificationLink}">Verifikasi Email</a>
+      `;
+  
+      console.log("Mengirim email reset password ke:", email);
+      await sendEmail(email, "Reset Password", emailContent);
+      console.log("Email reset password telah dikirim");      
+  
+      return res.status(201).json({
+        status: true,
+        message: "Registrasi berhasil, silakan cek email Anda untuk verifikasi",
+        newUser
+      });
+  
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({
+        message: 'Internal server error',
+        error: error.message
+      });
+    }
+  };
+  
+  async login(req, res) {
+    try {
+      const { email, password } = req.body;
+  
+      if(!email || !password) {
+        return res.status(401).json({
+          message : "email dan password harus diisi"
+        })
+      }
+  
+      if (!process.env.JWT_SECRET) {
+        throw new Error('JWT_SECRET tidak ditemukan di environment variables');
+      }
+  
+      const token = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: '1d' });
+  
+      res.status(200).json({
+        status: true,
+        message: 'Login berhasil',
+        token,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({
+        status: false,
+        message: 'Internal server error',
+        error: error.message,
+      });
+    }
+  };
+
+  async forgotPassword(req = request, res = response) {
+    const { email } = req.body;
+
+    try {
+      if(!email) {
+        return res.status(400).json({
+          status : false,
+          message : " email harus diisi"
+        })
+      }
+
+      const user = await db.user.findUnique({ where : { email}})
+      if(!user) {
+        return res.status(200).json({
+          status : false,
+          message : " Silakan cek email Anda untuk reset password "
+        })
+      }
+
+      if (user.resetToken && user.resetTokenExpired > new Date()) {
+        return res.status(400).json({
+          status: false,
+          message: "Link reset password sudah dikirim. Silakan cek email Anda.",
+        });
+      }
+
+      const resetToken = crypto.randomBytes(32).toString("hex");
+      const tokenExpired = new Date();
+      tokenExpired.setHours(tokenExpired.getHours() + 1)
+
+      await db.user.update({
+        where : { email },
+        data : { resetToken, resetTokenExpired : tokenExpired}
+      })
+
+      const resetLink = `http://localhost:8000/api/reset-password?token=${resetToken}`;
+      const emailContent = `
+        <div style="
+          font-family: 'Arial', sans-serif;
+          max-width: 600px;
+          margin: 0 auto;
+          padding: 30px;
+          background: #f5f7fa;
+          border-radius: 12px;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        ">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <span style="
+              font-size: 48px;
+              color: #4a90e2;
+            ">🔐</span>
+            <h2 style="
+              color: #333;
+              margin: 15px 0 0;
+              font-weight: 600;
+            ">Password Reset</h2>
+            <p style="color: #666; margin: 5px 0 0;">Set your new password</p>
+          </div>
+      
+          <form action="${resetLink}" method="POST" style="
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+          ">
+            <div style="margin-bottom: 20px;">
+              <label style="
+                display: block;
+                margin-bottom: 8px;
+                color: #555;
+                font-weight: 500;
+              ">New Password</label>
+              <input type="password" name="newPassword" required style="
+                width: 100%;
+                padding: 12px;
+                border: 2px solid #e0e0e0;
+                border-radius: 6px;
+                font-size: 16px;
+                transition: border-color 0.3s;
+              " onfocus="this.style.borderColor='#4a90e2'" onblur="this.style.borderColor='#e0e0e0'"/>
+            </div>
+      
+            <button type="submit" style="
+              width: 100%;
+              padding: 14px;
+              background: linear-gradient(135deg, #6a11cb, #2575fc);
+              color: white;
+              border: none;
+              border-radius: 8px;
+              font-size: 18px;
+              font-weight: 600;
+              cursor: pointer;
+              transition: transform 0.2s, box-shadow 0.2s;
+              box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 8px rgba(0,0,0,0.2)'" 
+            onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.1)'">
+              Reset Password
+            </button>
+          </form>
+      
+          <div style="text-align: center; margin-top: 25px;">
+            <p style="color: #999; font-size: 14px;">
+              Didn't request this? <a href="#" style="color: #4a90e2; text-decoration: none;">Report suspicious activity</a>
+            </p>
+            <div style="margin: 20px 0; position: relative;">
+              <hr style="border: 0; border-top: 1px solid #eee; position: absolute; width: 100%; left: 0; top: 50%;"/>
+              <span style="background: white; padding: 0 15px; position: relative; font-size: 13px; color: #aaa;">
+                Need help?
+              </span>
+            </div>
+            <p style="color: #777; font-size: 14px;">
+              Contact support at <a href="mailto:support@example.com" style="color: #4a90e2; text-decoration: none;">support@example.com</a>
+            </p>
+          </div>
+        </div>
+      `;
+
+      await sendEmail(email, " Reset Password", emailContent)
+
+      return res.status(200).json({ status: true, message: "Silakan cek email Anda untuk reset password" });
+    } catch (error) {
+      console.error(error.message)
+      return res.status(500).json({
+        status : false,
+        massage : "internal server error",
+      })
+    }
+  }
+
+  async resetPassword(req = request, res = response) {
+    const { token } = req.query;
+    const { newPassword } = req.body;
+
+    try {
+      if (!token || !newPassword) {
+        return res.status(400).json({ status: false, message: "Token dan password baru harus diisi" });
+      }
+
+      const user = await db.user.findFirst({
+        where : {
+          resetToken : token,
+          resetTokenExpired : { gt : new Date()}
+        }
+      })
+
+      if (!user) {
+        return res.status(400).json({ status: false, message: "Token tidak valid atau telah kadaluarsa" });
+      }
+
+      const hashedPassword = await bcrypt.hash(newPassword, 10)
+      await db.user.update({
+        where: { email: user.email },
+        data: {
+          password: hashedPassword,
+          resetToken: null,
+          resetTokenExpired: null
+        }
+      });      
+
+      const linkLogin = `http://localhost:5173/`
+      return res.status(200).send(`
+        <div style="
+          font-family: 'Arial', sans-serif;
+          max-width: 600px;
+          margin: 40px auto;
+          padding: 35px;
+          background: linear-gradient(145deg, #f5f7fa, #eef2f6);
+          border-radius: 15px;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+          text-align: center;
+        ">
+          <div style="margin-bottom: 30px;">
+            <span style="
+              font-size: 72px;
+              color: #4CAF50;
+              display: inline-block;
+              margin-bottom: 15px;
+            ">✅</span>
+            <h2 style="
+              color: #333;
+              font-size: 28px;
+              font-weight: 600;
+              margin: 0 0 10px;
+            ">Password Successfully Reset!</h2>
+            <p style="
+              color: #666;
+              font-size: 16px;
+              margin: 0;
+            ">You can now log in with your new password</p>
+          </div>
+      
+          <a href="/login" style="
+            display: inline-block;
+            margin: 25px 0;
+            padding: 14px 40px;
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white !important;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+          " onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 5px 8px rgba(0,0,0,0.2)'" 
+           onmouseout="this.style.transform='none'; this.style.boxShadow='0 3px 6px rgba(0,0,0,0.1)'">
+            Login Now
+          </a>
+      
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+            <p style="color: #999; font-size: 14px;">
+              Need help? <a href="/support" style="color: #4a90e2; text-decoration: none;">Contact Support</a>
+            </p>
+            <p style="color: #bbb; font-size: 12px; margin-top: 10px;">
+              <a href=${linkLogin} style="color: inherit; text-decoration: none;">← Back to Home</a>
+            </p>
+          </div>
+        </div>
+      `);
+    } catch (error) {
+      console.error(error);
+      return res.status(500).send("<p>Terjadi kesalahan, silakan coba lagi.</p>");
+    }
+  }
+}
+
+export default new AuthController();

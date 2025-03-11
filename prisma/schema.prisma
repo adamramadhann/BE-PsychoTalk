@@ -1,0 +1,96 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                Int       @id @default(autoincrement())
+  name              String
+  email             String    @unique
+  password          String
+  role              String?   @default("user") 
+  createdAt         DateTime  @default(now())
+  isVerified        Boolean   @default(false)
+  verificationToken String
+  updatedAt         DateTime  @updatedAt
+  resetToken        String?
+  resetTokenExpired DateTime?
+
+  profile           Profile?
+  bookingsAsPatient Booking[] @relation("PatientBookings")
+  bookingsAsDoctor  Booking[] @relation("DoctorBookings")
+  posts             Post[]
+  replies           Reply[]
+}
+
+model PendingUser {
+  id                Int       @id @default(autoincrement())
+  role              String    @default("user")
+  name              String
+  email             String    @unique
+  password          String
+  verificationToken String    @unique 
+  createdAt         DateTime  @default(now())
+}
+
+model Profile {
+  id                Int     @id @default(autoincrement())
+  userId            Int     @unique
+  user              User    @relation(fields: [userId], references: [id])
+  bio               String?
+  avatar            String
+  category          String?
+}
+
+model Booking {
+  id                Int      @id @default(autoincrement())
+  userId            Int
+  doctorId          Int
+  dateTime          DateTime
+  status            String   @default("pending")
+
+  notification      Notification[]
+
+  user              User     @relation("PatientBookings", fields: [userId], references: [id])
+  doctor            User     @relation("DoctorBookings", fields: [doctorId], references: [id])
+}
+
+model Post {
+  id                Int      @id @default(autoincrement())
+  title             String
+  content           String
+  category          String
+  userId            Int
+  createdAt         DateTime @default(now())
+
+  user              User     @relation(fields: [userId], references: [id])
+  replies           Reply[]
+}
+
+model Reply {
+  id                Int      @id @default(autoincrement())
+  content           String
+  postId            Int
+  userId            Int
+  createdAt         DateTime @default(now())
+
+  post              Post     @relation(fields: [postId], references: [id])
+  user              User     @relation(fields: [userId], references: [id])
+}
+
+model Notification {
+  id                Int      @id @default(autoincrement())
+  userId            Int
+  message           String
+  bookingId         Int?
+  isRead            Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  booking          Booking?  @relation(fields: [bookingId], references: [id])  
+}
+
+
