@@ -15,7 +15,7 @@ const transporter = nodemailer.createTransport({
   export const sendEmail = async (to, subject, html) => {
     try {
       const info = await transporter.sendMail({
-        from: '"Admin Hallo Damn" <ramadhanadam1104@gmail.com>',
+        from: '"Admin Hallo Damn" <adminMedica@gmail.com>',
         to,
         subject,
         html,
@@ -55,6 +55,7 @@ const transporter = nodemailer.createTransport({
           email: pendingUser.email,
           name: pendingUser.name,
           password: pendingUser.password,
+          role: pendingUser.role,
           verificationToken: pendingUser.verificationToken,
           isVerified: true
         }
