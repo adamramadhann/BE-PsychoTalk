@@ -10,9 +10,11 @@ class  AuthController {
   
   async register(req = request, res = response) {
     const { name, email, password, role } = req.body;
-  
+    console.log(req.body); 
+    console.log("Role received:", role);
+
     try {
-      if (!email || !password || !name) {
+      if (!email || !password || !name || !role) {
         return res.status(400).json({
           status: false,
           message: "Semua field harus diisi",
@@ -60,7 +62,7 @@ class  AuthController {
       `;
   
       console.log("Mengirim email reset password ke:", email);
-      await sendEmail(email, "Reset Password", emailContent);
+      await sendEmail(email, "Created Acount", emailContent);
       console.log("Email reset password telah dikirim");      
   
       return res.status(201).json({
@@ -91,14 +93,31 @@ class  AuthController {
       if (!process.env.JWT_SECRET) {
         throw new Error('JWT_SECRET tidak ditemukan di environment variables');
       }
+
+      const user = await db.user.findUnique({where : { email }});
+      if (!user) {
+        return res.status(404).json({
+          status: false,
+          message: "User tidak ditemukan",
+        });
+      }
+
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) {
+        return res.status(401).json({
+          status: false,
+          message: "Password salah",
+        });
+      }
   
-      const token = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: '1d' });
+      const token = jwt.sign({id: user.id, email : user.email, role : user.role }, process.env.JWT_SECRET, { expiresIn: '1d' });
   
       res.status(200).json({
         status: true,
         message: 'Login berhasil',
         token,
       });
+      
     } catch (error) {
       console.error(error);
       res.status(500).json({
@@ -120,6 +139,14 @@ class  AuthController {
         })
       }
 
+      const profile = await db.profile.findUnique({ where: { email } });
+      if (!profile) {
+        return res.status(400).json({
+          status: false,
+          message: "Email tidak ditemukan di Profile",
+        });
+      }
+  
       const user = await db.user.findUnique({ where : { email}})
       if(!user) {
         return res.status(200).json({

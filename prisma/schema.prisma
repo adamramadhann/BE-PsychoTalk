@@ -43,6 +43,7 @@ model Profile {
   user              User    @relation(fields: [userId], references: [id])
   bio               String?
   avatar            String
+  role              String? 
   category          String?
 }
 

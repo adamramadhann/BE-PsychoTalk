@@ -4,28 +4,49 @@ import { PrismaClient } from '@prisma/client'
 
 env.config();
 const db = new PrismaClient();
-const JWT_SCREET = process.env.JWT_SCREET;
+const JWT_SCREET = process.env.JWT_SECRET;
 
 if(!JWT_SCREET) {
     console.error("❌ ERROR: JWT_SECRET tidak ditemukan! Pastikan ada di .env");
     process.exit(1)
 }
 
-export const authenticateToken = (req, res, next) => {
-    const token = req.header("Authorization")
+export const authenticateToken = async (req, res, next) => {
+    const token = req.header("Authorization")?.replace("Bearer ", "")
 
     if (!token) {
         return res.status(401).json({ status: false, message: "Akses ditolak! Token tidak ditemukan" });
     }
 
     try {
-        const verified = jwt.verify(token.replace("Bearer ", ""), JWT_SCREET)
-        req.user = verified;
+        const decoded = jwt.verify(token.replace("Bearer ", ""), JWT_SCREET)
+
+        const user = await db.user.findUnique({
+            where: { id: decoded.id }
+        });
+
+
+        if (!user) {
+            return res.status(401).json({ status: false, message: "User tidak ditemukan" });
+        }
+
+        if (!decoded.id) {
+            return res.status(403).json({ status: false, message: "Token tidak valid (ID tidak ditemukan)" });
+        } 
+
+        req.user = {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role
+        };
+        
+
         next()
     } catch (error) {
         return res.status(403).json({
             status : false,
-            message : "token invalid"
+            message : "token valid no"
         })
     }
 }
