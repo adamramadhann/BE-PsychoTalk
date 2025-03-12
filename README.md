@@ -44,7 +44,7 @@ This is the backend API for a Psychology Consultation application. The system al
 
 - Node.js (v14+)
 - MySQL
-- npm or yarn
+- npm
 
 ## Installation
 
