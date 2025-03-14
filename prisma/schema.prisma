@@ -85,7 +85,8 @@ model Reply {
 
 model Notification {
   id                Int      @id @default(autoincrement())
-  userId            Int
+  userId            Int?
+  doctorId          Int?   
   message           String
   bookingId         Int?
   isRead            Boolean  @default(false)
