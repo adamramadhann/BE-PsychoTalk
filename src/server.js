@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import cors from 'cors'; 
 import routeAuth from './auth/routeAuth.js'; 
 import routeControler from './controller/routeControler.js';
+import path from "path";
 
 dotenv.config()
 
@@ -15,9 +16,11 @@ app.use(express.json({
 app.use(express.urlencoded({
     extended : true
 }))
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 app.use('/api', routeAuth )
 app.use('/api', routeControler )
+
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => {

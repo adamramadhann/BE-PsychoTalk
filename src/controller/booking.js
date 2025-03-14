@@ -6,64 +6,63 @@ class BookingHandler {
         try {
             const { doctorId, dateTime } = req.body;
             const userId = req.user.id;
-
+    
             const doctor = await db.user.findFirst({
-                where : {
-                    id : parseInt(doctorId),
-                    role : 'doctor',
-                    isVerified : true
+                where: {
+                    id: parseInt(doctorId),
+                    role: 'doctor',
+                    isVerified: true
                 }
-            })
-
-            if(!doctor) {
-                return res.status(404).json({ message : 'doctor not found'})
+            });
+    
+            if (!doctor) {
+                return res.status(404).json({ message: 'Doctor not found' });
             }
-
+    
             const existingBooking = await db.booking.findFirst({
-                where : {
-                    doctorId : parseInt(doctorId),
-                    dateTime : new Date(dateTime),
-                    status : {
-                        in : ['pending', 'cinfirmed']
-                    }
+                where: {
+                    doctorId: parseInt(doctorId),
+                    dateTime: new Date(dateTime),
+                    status: { in: ['pending', 'confirmed'] }
                 }
             });
-
-            if(existingBooking) {
-                return res.status(400).json({ message : 'time slot not available'})
+    
+            if (existingBooking) {
+                return res.status(400).json({ message: 'Time slot not available' });
             }
-
+    
             const createBooking = await db.booking.create({
-                data : {
-                    userId : parseInt(userId),
-                    doctorId : parseInt(doctorId),
-                    dateTime : new Date(dateTime),
-                    status : 'pending' 
+                data: {
+                    userId: parseInt(userId),
+                    doctorId: parseInt(doctorId),
+                    dateTime: new Date(dateTime),
+                    status: 'pending'
                 }
             });
-
+    
             await db.notification.create({
-                data : {
-                    userId : parseInt(doctorId),
-                    message : `you have a new booking request from ${req.user.name}`
+                data: {
+                    doctorId: parseInt(doctorId),
+                    message: `You have a new booking request from ${req.user.name}`,
+                    bookingId: createBooking.id
                 }
-            })
-
+            }, console.log(' ini untuk dokter'));
+    
             await db.notification.create({
-                data : {
-                    userId : parseInt(userId),
-                    message : 'you boking requesy has been sent to the doctor',
-                    bookingId : createBooking.id
+                data: {
+                    userId: parseInt(userId),
+                    message: 'Your booking request has been sent to the doctor',
+                    bookingId: createBooking.id
                 }
-            })
-
+            }, console.log('ini untuk user'));
+    
             return res.status(201).json({
-                message : 'boking created successfully',
+                message: 'Booking created successfully',
                 createBooking
-            })
+            });
         } catch (error) {
-            console.error(error.message)
-            return res.status(500).json({ message : 'internal server error'})
+            console.error(error.message);
+            return res.status(500).json({ message: 'Internal server error' });
         }
     }
 
@@ -103,6 +102,9 @@ class BookingHandler {
                                 profile: true
                             }
                         }
+                    },
+                    orderBy : {
+                        dateTime : 'asc' 
                     }
                 })
             }
@@ -123,7 +125,7 @@ class BookingHandler {
             const { status } = req.body;
             const userId = req.user.id
 
-            if(!['pending', 'confrimen', 'completed', 'cancelled'].includes(status)) {
+            if(!['pending', 'confirmed', 'completed', 'cancelled'].includes(status)) {
                 return res.status(400).json({ message: 'Invalid status' });
             }
 
@@ -147,6 +149,14 @@ class BookingHandler {
                 where : { id : parseInt(id)},
                 data : { status }
             })
+
+            await db.notification.create({
+                data : {
+                    doctorId: boking.doctorId, 
+                    message: `Booking status has been updated to ${status}`,
+                    bookingId: boking.id
+                }
+            });            
 
             let message = '';
             switch (status) {
@@ -175,9 +185,10 @@ class BookingHandler {
                 message: 'Booking status updated successfully',
                 booking: updateBooking 
               });
-        } catch (error) {
-            
-        }
+            } catch (error) {
+                console.error('Error updating booking status:', error);
+                return res.status(500).json({ message: 'Server error' });
+            }
     }
 }
 
