@@ -139,7 +139,7 @@ class  AuthController {
         })
       }
 
-      const profile = await db.profile.findUnique({ where: { email } });
+      const profile = await db.user.findUnique({ where: { email } });
       if (!profile) {
         return res.status(400).json({
           status: false,
@@ -327,7 +327,7 @@ class  AuthController {
             ">You can now log in with your new password</p>
           </div>
       
-          <a href="/login" style="
+          <a href="/" style="
             display: inline-block;
             margin: 25px 0;
             padding: 14px 40px;

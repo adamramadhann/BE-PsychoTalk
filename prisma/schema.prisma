@@ -42,6 +42,7 @@ model Profile {
   userId            Int     @unique
   user              User    @relation(fields: [userId], references: [id])
   bio               String?
+  email             String?
   avatar            String
   role              String? 
   category          String?
