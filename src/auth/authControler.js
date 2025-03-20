@@ -13,6 +13,8 @@ class  AuthController {
     console.log(req.body); 
     console.log("Role received:", role);
 
+    console.log(req.body)
+
     try {
       if (!email || !password || !name || !role) {
         return res.status(400).json({
@@ -56,14 +58,41 @@ class  AuthController {
   
       const verificationLink = `http://localhost:8000/api/verify-email?verificationToken=${verificationToken}`;
       const emailContent = `
-        <p>Halo ${name},</p>
-        <p>Terima kasih telah mendaftar. Klik link di bawah untuk verifikasi email Anda:</p>
-        <a href="${verificationLink}">Verifikasi Email</a>
-      `;
+      <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+        <table align="center" width="100%" cellspacing="0" cellpadding="0" border="0" 
+          style="max-width: 600px; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);">
+          <tr>
+            <td style="padding: 20px; text-align: center; background-color: #007bff; color: #ffffff; 
+              border-top-left-radius: 8px; border-top-right-radius: 8px;">
+              <h2>Verifikasi Email Anda</h2>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 20px; text-align: center; color: #333;">
+              <p>Halo <strong>${name}</strong>,</p>
+              <p>Terima kasih telah mendaftar. Klik tombol di bawah untuk verifikasi email Anda:</p>
+              <a href="${verificationLink}" style="display: inline-block; padding: 12px 20px; 
+                font-size: 16px; color: #ffffff; background-color: #007bff; text-decoration: none; 
+                border-radius: 5px; margin-top: 10px;">Verifikasi Email</a>
+              <p style="margin-top: 20px; font-size: 14px; color: #777;">Jika Anda tidak merasa mendaftar, 
+                abaikan email ini.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="text-align: center; padding: 10px; font-size: 12px; color: #aaa;">
+              &copy; 2025 PsychoTalk. All rights reserved.
+            </td>
+          </tr>
+        </table>
+      </div>
+    `;
+    
   
-      console.log("Mengirim email reset password ke:", email);
-      await sendEmail(email, "Created Acount", emailContent);
-      console.log("Email reset password telah dikirim");      
+      try {
+        await sendEmail(email, "Created Account", emailContent);
+    } catch (error) {
+        console.error("Gagal mengirim email:", error);
+    }     
   
       return res.status(201).json({
         status: true,

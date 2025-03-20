@@ -15,16 +15,17 @@ const transporter = nodemailer.createTransport({
   export const sendEmail = async (to, subject, html) => {
     try {
       const info = await transporter.sendMail({
-        from: '"Admin Hallo Damn" <adminMedica@gmail.com>',
+        from: `"Admin Medica" <${process.env.EMAIL_USER}>`, 
         to,
         subject,
         html,
       });
       console.log("Email terkirim:", info.response);
     } catch (error) {
-      console.error("Error saat mengirim email:", error.message);
+      console.error("Gagal mengirim email:", error.message);
     }
   };
+  
   
 
   export const verifyEmail = async (req = request, res = response) => {
@@ -79,3 +80,5 @@ const transporter = nodemailer.createTransport({
       });
     }
   };
+
+  
