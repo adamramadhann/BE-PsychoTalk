@@ -24,12 +24,12 @@ class BookingHandler {
                     doctorId : parseInt(doctorId),
                     dateTime : new Date(dateTime),
                     status : {
-                        in : ['pending', 'cinfirmed']
+                        in : ['pending', 'confrimed']
                     }
                 }
             });
 
-            if(existingBooking) {
+            if(!existingBooking) {
                 return res.status(400).json({ message : 'time slot not available'})
             }
 
