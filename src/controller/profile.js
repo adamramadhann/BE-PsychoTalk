@@ -107,10 +107,10 @@ class userControler {
             if(role !== 'doctor') { 
                 return res.status(400).json({ message : 'Access denied. Only doctors can access this resource.'})
             }
-            const doctor = await db.profile.findMany({
+            const doctor = await db.user.findMany({
                 where : { role : 'doctor'}
             })
-
+            
             return res.status(200).json({
                 message : 'succesfully get profile doctor',
                 doctor
