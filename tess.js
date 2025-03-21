@@ -1,32 +1,44 @@
-import express from 'express';
-import dotenv from 'dotenv';
-import cors from 'cors'; 
-import path from 'path';
-import routeAuth from './auth/routeAuth.js'; 
-import routeControler from './controller/routeControler.js';
+async register(req = request, res = response) {
+    const { name, email, password, role } = req.body;
 
-dotenv.config();
+    try {
+        if (!email || !password || !name || !role) {
+            return res.status(400).json({
+                status: false,
+                message: "Semua field harus diisi",
+            });
+        }
 
-const app = express();
+        const existingUser = await db.user.findUnique({ where: { email } });
+        if (existingUser) {
+            return res.status(400).json({
+                status: false,
+                message: "Email sudah terdaftar",
+            });
+        }
 
-// Middleware
-app.use(cors());
-app.use(express.json({ limit: '100mb' }));
-app.use(express.urlencoded({ extended: true }));
+        const hashedPassword = await passwordHash(password);
 
-// **Menjadikan folder uploads sebagai public**
-const __dirname = path.resolve();
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+        const newUser = await db.user.create({
+            data: {
+                email,
+                password: hashedPassword,
+                name,
+                role,
+            }
+        });
 
-// Routes
-app.use('/api', routeAuth);
-app.use('/api', routeControler);
+        return res.status(201).json({
+            status: true,
+            message: "Registrasi berhasil",
+            newUser
+        });
 
-const PORT = process.env.PORT || 8000;
-app.listen(PORT, () => {
-    console.log(`
-        =================
-        Server running on port ${PORT}
-        =================
-    `);
-});
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            message: 'Internal server error',
+            error: error.message
+        });
+    }
+}

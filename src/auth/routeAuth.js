@@ -9,5 +9,6 @@ routeAuth.post('/login', AuthController.login);
 routeAuth.get("/verify-email", verifyEmail); 
 routeAuth.post("/forgot-password", AuthController.forgotPassword);
 routeAuth.post("/reset-password", AuthController.resetPassword);
+routeAuth.post("/registerDoctor", AuthController.registerDoctor);
 
 export default routeAuth;

@@ -7,7 +7,52 @@ import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken"
 
 class  AuthController {
-  
+
+  async registerDoctor (req = request, res = response) {
+    try {
+      const { name, email, password, role = 'doctor' } = req.body;
+
+      if (!email || !password || !name || !role) {
+        return res.status(400).json({
+          status: false,
+          message: "Semua field harus diisi",
+        });
+      }
+
+      const existingUser = await db.user.findUnique({ where: { email } });
+      if (existingUser) {
+        return res.status(400).json({
+          status: false,
+          message: "Email sudah terdaftar",
+        });
+      }
+
+      const hashedPassword = await passwordHash(password);
+      const verificationToken = crypto.randomBytes(32).toString("hex");
+
+      const newUser = await db.user.create({
+        data: {
+          email,
+          password: hashedPassword,
+          name,
+          role : 'doctor',
+          verificationToken: verificationToken, 
+        }
+      });
+
+      return res.status(201).json({
+        status: true,
+        message: "Registrasi berhasil",
+        newUser
+      });
+
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({
+        message: 'Internal server error',
+      });
+    }
+  }
   async register(req = request, res = response) {
     const { name, email, password, role } = req.body;
     console.log(req.body); 
