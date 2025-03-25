@@ -22,14 +22,17 @@ class BookingHandler {
             const existingBooking = await db.booking.findFirst({
                 where : {
                     doctorId : parseInt(doctorId),
-                    dateTime : new Date(dateTime),
-                    status : {
-                        in : ['pending', 'confrimed']
-                    }
+                    dateTime : {
+                        gte : new Date(dateTime),
+                        lte : new Date(new Date(dateTime).getTime() + 1 * 60 * 60 * 1000)
+                    },
+                    status: {
+                        in: ['pending', 'confirmed']
+                    }                    
                 }
             });
 
-            if(!existingBooking) {
+            if(existingBooking) {
                 return res.status(400).json({ message : 'time slot not available'})
             }
 

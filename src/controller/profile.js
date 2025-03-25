@@ -102,11 +102,6 @@ class userControler {
 
     async getDoctorAll(req = request, res = response) {
         try {
-            const role  = req.user.role;
-
-            if(role !== 'doctor') { 
-                return res.status(400).json({ message : 'Access denied. Only doctors can access this resource.'})
-            }
             const doctor = await db.user.findMany({
                 where : { role : 'doctor'}
             })
