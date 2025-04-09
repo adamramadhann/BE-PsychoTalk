@@ -92,6 +92,40 @@ class notification{
             res.status(500).json({message : 'internal server error'})
         }
     }
+
+    async deletedNotification(req = request, res = response) {
+        try {
+            const userId = req.user.id;
+            const { id } = req.params;
+    
+            const notification = await db.notification.findUnique({
+                where: {
+                    id: parseInt(id)
+                }
+            });
+    
+            if (!notification) {
+                return res.status(404).json({ message: 'Notification not found' });
+            }
+    
+            if (notification.userId !== userId) {
+                return res.status(403).json({ message: 'Not authorized to delete this notification' });
+            }
+    
+            await db.notification.delete({
+                where: {
+                    id: parseInt(id)
+                }
+            });
+    
+            return res.status(200).json({ message: 'Notification deleted successfully' });
+    
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ message: 'Internal server error' });
+        }
+    }
+    
 }
 
 export default new notification
