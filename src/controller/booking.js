@@ -182,6 +182,37 @@ class BookingHandler {
             
         }
     }
+
+    async deletedBooking( req = request, res = response ) {
+        try {
+            const { id } = req.params
+            const userId = req.user.id
+
+            const booking = await db.booking.findUnique({
+                where : { id : parseInt(id)}
+            })
+
+            if(!booking) {
+                return res.status(404).json({ message: 'Booking not found' });
+            }
+
+            if (booking.userId !== userId && booking.doctorId !== userId) {
+                return res.status(403).json({ message: 'Not authorized to delete this booking' });
+            }
+
+            await db.booking.delete({
+                where : {
+                    id : parseInt(id)
+                }
+            })
+          
+        return res.status(200).json({ message: 'Booking deleted successfully' });
+
+    } catch (error) {
+        console.error('Error deleting booking:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+    }
 }
 
 export default new BookingHandler();

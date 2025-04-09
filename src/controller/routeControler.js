@@ -17,6 +17,7 @@ routeControler.get('/getDocProfile', authenticateToken, userControler.getDoctorA
 routeControler.post('/booking', authenticateToken, BookingHandler.createdBooking);
 routeControler.patch('/booking/:id', authenticateToken, BookingHandler.updatedBokingStatus);
 routeControler.get('/getBookingUser', authenticateToken, BookingHandler.getUserBooking)
+routeControler.delete('/deletedBook/:id',authenticateToken, BookingHandler.deletedBooking)
 
 // forum controler
 routeControler.post('/forumPost', authenticateToken, formPost.createdPost);
@@ -27,6 +28,7 @@ routeControler.get('/getForumPost', authenticateToken, formPost.getPost);
 // notification
 routeControler.get('/notif', authenticateToken, notifications.getNotifications)
 routeControler.post('/notif/:id', authenticateToken, notifications.markAsRead)
+routeControler.delete('/deletedNotif/:id',authenticateToken, notifications.deletedNotification)
 
 
 export default routeControler
