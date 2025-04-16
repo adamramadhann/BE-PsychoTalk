@@ -57,6 +57,9 @@ const transporter = nodemailer.createTransport({
           password: pendingUser.password,
           role: pendingUser.role,
           verificationToken: pendingUser.verificationToken,
+          gender: pendingUser.gender,
+          bio: pendingUser.bio,
+          categories: pendingUser.categories,
           isVerified: true
         }
       });
