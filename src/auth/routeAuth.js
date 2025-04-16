@@ -7,8 +7,8 @@ const routeAuth = Router();
 routeAuth.post('/register', AuthController.register);
 routeAuth.post('/login', AuthController.login);
 routeAuth.get("/verify-email", verifyEmail); 
-routeAuth.post("/forgot-password", AuthController.forgotPassword);
-routeAuth.post("/reset-password", AuthController.resetPassword);
+routeAuth.post("/forgot-password", AuthController.requestResetPassword);
+routeAuth.post("/reset-password/:token", AuthController.resetPassword);
 routeAuth.post("/registerDoctor", AuthController.registerDoctor);
 
 export default routeAuth;

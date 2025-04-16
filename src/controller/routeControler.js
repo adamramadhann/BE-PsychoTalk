@@ -4,7 +4,7 @@ import userControler from "./profile";
 import { upload } from "../config/upload";
 import BookingHandler from './booking'
 import formPost from "./formPost";
-import notifications from "./notifications";
+import notifications from "./notifications"; 
 
 const routeControler = new Router()
 

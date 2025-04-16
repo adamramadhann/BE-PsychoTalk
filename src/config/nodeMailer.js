@@ -31,7 +31,6 @@ const transporter = nodemailer.createTransport({
   export const verifyEmail = async (req = request, res = response) => {
     const { verificationToken } = req.query;
   
-    // Pastikan verificationToken ada
     if (!verificationToken) {
       return res.status(400).json({
         status: false,
@@ -80,5 +79,7 @@ const transporter = nodemailer.createTransport({
       });
     }
   };
+
+
 
   

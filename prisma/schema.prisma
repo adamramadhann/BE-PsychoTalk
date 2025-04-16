@@ -11,6 +11,8 @@ model User {
   id                Int       @id @default(autoincrement())
   name              String
   email             String    @unique
+  gender            String
+  catagories        String
   password          String
   role              String?   @default("user") 
   createdAt         DateTime  @default(now())
@@ -43,6 +45,7 @@ model Profile {
   user              User    @relation(fields: [userId], references: [id])
   bio               String?
   avatar            String
+  gender            String
   role              String? 
   category          String?
 }
