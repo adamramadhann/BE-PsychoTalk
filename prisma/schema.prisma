@@ -12,7 +12,8 @@ model User {
   name              String
   email             String    @unique
   gender            String
-  catagories        String
+  categories        String?
+  bio               String
   password          String
   role              String?   @default("user") 
   createdAt         DateTime  @default(now())
@@ -25,16 +26,35 @@ model User {
   profile           Profile?
   bookingsAsPatient Booking[] @relation("PatientBookings")
   bookingsAsDoctor  Booking[] @relation("DoctorBookings")
-  posts             Post[]
-  replies           Reply[]
+  // posts             Post[]
+  // replies           Reply[]
+
+  userLove          LoveDoctor[]  @relation("UserLove")
+  loveDoc           LoveDoctor[]  @relation("DoctorLove")
 }
 
+model LoveDoctor {
+  id               Int        @id  @default(autoincrement())
+  userId           Int
+  doctorId         Int
+  createdAt        DateTime   @default(now())
+
+  user            User       @relation("DoctorLove", fields: [doctorId], references: [id])
+  doctor          User       @relation("UserLove", fields: [userId], references: [id])
+
+  @@unique([userId, doctorId])
+}
+
+
 model PendingUser {
-  id                Int       @id @default(autoincrement())
+  id                Int       @id @default(autoincrement())  
   role              String?    @default("user")
   name              String
   email             String    @unique
   password          String
+  gender            String
+  categories        String
+  bio               String
   verificationToken String    @unique 
   createdAt         DateTime  @default(now())
 }
@@ -45,6 +65,7 @@ model Profile {
   user              User    @relation(fields: [userId], references: [id])
   bio               String?
   avatar            String
+  categories        String
   gender            String
   role              String? 
   category          String?
@@ -63,28 +84,28 @@ model Booking {
   doctor            User     @relation("DoctorBookings", fields: [doctorId], references: [id])
 }
 
-model Post {
-  id                Int      @id @default(autoincrement())
-  title             String
-  content           String
-  category          String
-  userId            Int
-  createdAt         DateTime @default(now())
+// model Post {
+//   id                Int      @id @default(autoincrement())
+//   title             String
+//   content           String
+//   category          String
+//   userId            Int
+//   createdAt         DateTime @default(now())
 
-  user              User     @relation(fields: [userId], references: [id])
-  replies           Reply[]
-}
+//   user              User     @relation(fields: [userId], references: [id])
+//   replies           Reply[]
+// }
 
-model Reply {
-  id                Int      @id @default(autoincrement())
-  content           String
-  postId            Int
-  userId            Int
-  createdAt         DateTime @default(now())
+// model Reply {
+//   id                Int      @id @default(autoincrement())
+//   content           String
+//   postId            Int
+//   userId            Int
+//   createdAt         DateTime @default(now())
 
-  post              Post     @relation(fields: [postId], references: [id])
-  user              User     @relation(fields: [userId], references: [id])
-}
+//   post              Post     @relation(fields: [postId], references: [id])
+//   user              User     @relation(fields: [userId], references: [id])
+// }
 
 model Notification {
   id                Int      @id @default(autoincrement())
@@ -92,9 +113,10 @@ model Notification {
   message           String
   bookingId         Int?
   isRead            Boolean  @default(false)
-  createdAt DateTime @default(now())
+  createdAt         DateTime @default(now())
 
-  booking          Booking?  @relation(fields: [bookingId], references: [id])  
+  booking           Booking? @relation(fields: [bookingId], references: [id])  
 }
+
 
 

@@ -19,6 +19,9 @@ routeControler.patch('/booking/:id', authenticateToken, BookingHandler.updatedBo
 routeControler.get('/getBookingUser', authenticateToken, BookingHandler.getUserBooking)
 routeControler.delete('/deletedBook/:id',authenticateToken, BookingHandler.deletedBooking)
 
+// loved Card
+routeControler.post('/loved/:id',authenticateToken, BookingHandler.lovedCardDoctor)
+
 // forum controler
 routeControler.post('/forumPost', authenticateToken, formPost.createdPost);
 routeControler.patch('/forumPost/:id', authenticateToken, formPost.createdReply);
@@ -29,6 +32,8 @@ routeControler.get('/getForumPost', authenticateToken, formPost.getPost);
 routeControler.get('/notif', authenticateToken, notifications.getNotifications)
 routeControler.post('/notif/:id', authenticateToken, notifications.markAsRead)
 routeControler.delete('/deletedNotif/:id',authenticateToken, notifications.deletedNotification)
+
+
 
 
 export default routeControler

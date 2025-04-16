@@ -213,6 +213,52 @@ class BookingHandler {
         return res.status(500).json({ message: 'Internal server error' });
     }
     }
+
+    async lovedCardDoctor( req = request, res = response ) {
+        const loverId = parseInt(req.user.id)
+        const lovedId = parseInt(req.params.doctorId)
+        try {
+            const existingLoved = await db.loveDoctor.findUnique({
+                where : { id : {
+                    loved : {
+                        loverId,
+                        lovedId
+                    }
+                }}
+            })
+
+            if(existingLoved) {
+                await db.loveDoctor.delete({
+                    where : { id : {
+                        loved : {
+                            loverId,
+                            lovedId
+                        }
+                    }}
+                })
+
+                return res.status(200).json({
+                    status : false,
+                    message : 'loved remove',
+                })
+            } else {
+                await db.loveDoctor.create({
+                    data : {
+                        loverId,
+                        lovedId
+                    }
+                })
+
+                return res.status(201).json({
+                    loved: true,
+                    message: "Loved this doctor"
+                });
+            }   
+        } catch (error) {
+            console.error(error.message)
+            return res.status(500).json({ message: 'Internal server error' });
+        }
+    }
 }
 
 export default new BookingHandler();

@@ -10,11 +10,11 @@ class  AuthController {
 
   async registerDoctor (req = request, res = response) {
     try {
-      const { name, email, password, role = 'doctor' } = req.body;
+      const { name, email, password, role = 'doctor', bio, gender, catagories} = req.body;
 
-      if (!email || !password || !name || !role) {
+      if (!email || !password || !name || !role ) {
         return res.status(400).json({
-          status: false,
+          status: false, 
           message: "Semua field harus diisi",
         });
       }
@@ -42,6 +42,8 @@ class  AuthController {
         }
       });
 
+      console.log(req.body.gender)
+
       return res.status(201).json({
         status: true,
         message: "Registrasi berhasil",
@@ -57,18 +59,25 @@ class  AuthController {
   }
   
   async register(req = request, res = response) {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role = "user", gender , bio, categories } = req.body;
     console.log(req.body); 
     console.log("Role received:", role);
 
     console.log(req.body)
 
     try {
-      if (!email || !password || !name || !role) {
+      if (!email || !password || !name || !role || !categories || !bio || !gender) {
         return res.status(400).json({
           status: false,
           message: "Semua field harus diisi",
         });
+      }
+
+      const maxWords = 60;
+      const bioWord = bio.trim().split('/\s+/').length;
+
+      if(bioWord > maxWords) {
+        return res.status(500).json({message : `word more than ${maxWords} !`})
       }
   
       const existingUser = await db.user.findUnique({ where: { email } });
@@ -100,6 +109,9 @@ class  AuthController {
           password: hashedPassword,
           name,
           role,
+          gender,
+          categories,
+          bio,
           verificationToken
         }
       });
