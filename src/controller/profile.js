@@ -2,6 +2,7 @@ import { request, response } from "express";
 import db from "../conn";
 
 class userControler {
+    
     async getProfile (req = request, res = response) {
         try {
             const { id } = req.user;
@@ -61,10 +62,23 @@ class userControler {
                 }
             })
 
-            return res.status(200).json({
-                message : "profile updated successfully",
-                profile
+            const updatedUser = await db.user.findUnique({
+                where : { id : parseInt(id)},
+                include : {
+                    profile : true
+                }
             })
+
+            return res.status(200).json({
+                message: "Profile updated successfully",
+                user: {
+                  id: updatedUser.id,
+                  name: updatedUser.name,
+                  email: updatedUser.email
+                },
+                profile: updatedUser.profile
+              });
+              
         } catch (error) {
             console.error(error.message)
             res.status(500).json({ message : 'internal server error'})
