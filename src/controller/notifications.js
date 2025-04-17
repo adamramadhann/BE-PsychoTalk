@@ -45,7 +45,6 @@ class notification{
             })
 
         } catch (error) {
-            console.error(error)
             res.status(500).json({message : 'internal server error'})
         }
     }
@@ -88,7 +87,6 @@ class notification{
             }
 
         } catch (error) {
-            console.error(error)
             res.status(500).json({message : 'internal server error'})
         }
     }
@@ -121,7 +119,6 @@ class notification{
             return res.status(200).json({ message: 'Notification deleted successfully' });
     
         } catch (error) {
-            console.error(error);
             return res.status(500).json({ message: 'Internal server error' });
         }
     }

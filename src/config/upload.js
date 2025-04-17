@@ -1,7 +1,6 @@
 import multer from "multer";
 import path from "path";
 
-// Konfigurasi tempat penyimpanan file
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, "uploads/");  
@@ -12,7 +11,6 @@ const storage = multer.diskStorage({
     }
 });
 
-// Filter jenis file
 const fileFilter = (req, file, cb) => {
     if (file.mimetype.startsWith("image/")) {
         cb(null, true);

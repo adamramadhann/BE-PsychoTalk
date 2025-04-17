@@ -7,7 +7,6 @@ const db = new PrismaClient();
 const JWT_SCREET = process.env.JWT_SECRET;
 
 if(!JWT_SCREET) {
-    console.error("❌ ERROR: JWT_SECRET tidak ditemukan! Pastikan ada di .env");
     process.exit(1)
 }
 
@@ -70,7 +69,6 @@ export const verifyToken = (token) => {
 
 export const authorizeRoles = (...roles) => {
     return ( req, res, next) => {
-        console.log("User Role:", req.user.role); 
         if (!req.user || !roles.includes(req.user.role)) {
             return res.status(403).json({ message: "Akses ditolak!" });
         }

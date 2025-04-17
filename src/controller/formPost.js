@@ -35,7 +35,6 @@ class formPost {
                 post 
             });
         } catch (error) {
-            console.error('Error creating post:', error);
             return res.status(500).json({ message: 'Server error' });
         }
     }
@@ -88,7 +87,6 @@ class formPost {
                 }
             })
         } catch (error) {
-            console.error(error.message)
             return res.status(500).json({ message: 'Server error' });
         }
     }
@@ -128,7 +126,6 @@ class formPost {
 
             return res.status(200).json(post);
         } catch (error) {
-            console.error('Error creating post:', error);
             return res.status(500).json({ message: 'Server error' });
         }
     }
@@ -187,7 +184,6 @@ class formPost {
                 replyWithUser 
             });
         } catch (error) {
-            console.error('Error creating reply:', error);
             return res.status(500).json({ message: 'Server error' });
         }
     }
