@@ -8,115 +8,105 @@ datasource db {
 }
 
 model User {
-  id                Int       @id @default(autoincrement())
+  id                Int          @id @default(autoincrement())
   name              String
-  email             String    @unique
-  gender            String
-  categories        String?
-  bio               String
+  email             String       @unique
   password          String
-  role              String?   @default("user") 
-  createdAt         DateTime  @default(now())
-  isVerified        Boolean   @default(false)
+  role              String?      @default("user")
+  createdAt         DateTime     @default(now())
+  isVerified        Boolean      @default(false)
   verificationToken String
-  updatedAt         DateTime  @updatedAt
+  updatedAt         DateTime     @updatedAt
   resetToken        String?
   resetTokenExpired DateTime?
+  gender            String
+  about             String
+  bio               String
+  categories        String?
+  statusBook        Boolean      @default(false)
+  loveStatus        Boolean
+  // prifile           Profile?
 
-  profile           Profile?
-  bookingsAsPatient Booking[] @relation("PatientBookings")
-  bookingsAsDoctor  Booking[] @relation("DoctorBookings")
-  // posts             Post[]
-  // replies           Reply[]
+  bookingsAsDoctor  Booking[]     @relation("DoctorBookings")
+  bookingsAsPatient Booking[]     @relation("PatientBookings")
 
-  userLove          LoveDoctor[]  @relation("UserLove")
   loveDoc           LoveDoctor[]  @relation("DoctorLove")
+  userLove          LoveDoctor[]  @relation("UserLove")
+
+  loveDocProf       Profile[]     @relation("DoctorLove")
+  userLoveProf      Profile[]     @relation("UserLove")
 }
 
 model LoveDoctor {
-  id               Int        @id  @default(autoincrement())
-  userId           Int
-  doctorId         Int
-  createdAt        DateTime   @default(now())
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  doctorId   Int
+  createdAt  DateTime @default(now())
+  loveStatus Boolean  @default(false)
+  
+  user       User     @relation("DoctorLove", fields: [doctorId], references: [id])
+  doctor     User     @relation("UserLove", fields: [userId], references: [id])
 
-  user            User       @relation("DoctorLove", fields: [doctorId], references: [id])
-  doctor          User       @relation("UserLove", fields: [userId], references: [id])
+  @@unique([userId, doctorId])
+  @@index([doctorId], map: "LoveDoctor_doctorId_fkey")
+}
+
+model PendingUser {
+  id                Int      @id @default(autoincrement())
+  role              String?  @default("user")
+  name              String
+  email             String   @unique
+  password          String
+  verificationToken String   @unique
+  createdAt         DateTime @default(now())
+  about             String
+  bio               String
+  categories        String
+  gender            String
+}
+
+model Profile {
+  id         Int     @id @default(autoincrement())
+  userId     Int    
+  doctorId     Int    
+  bio        String?
+  avatar     String
+  gender     String
+  role       String?
+  about      String
+  categories String
+  loveStatus Boolean  @default(false)
+  // userProf   User?
+
+
+  user       User     @relation("DoctorLove", fields: [doctorId], references: [id])
+  doctor     User     @relation("UserLove", fields: [userId], references: [id])
 
   @@unique([userId, doctorId])
 }
 
-
-model PendingUser {
-  id                Int       @id @default(autoincrement())  
-  role              String?    @default("user")
-  name              String
-  email             String    @unique
-  password          String
-  gender            String
-  categories        String
-  bio               String
-  verificationToken String    @unique 
-  createdAt         DateTime  @default(now())
-}
-
-model Profile {
-  id                Int     @id @default(autoincrement())
-  userId            Int     @unique
-  user              User    @relation(fields: [userId], references: [id])
-  bio               String?
-  avatar            String
-  categories        String
-  gender            String
-  role              String? 
-  category          String?
-}
-
 model Booking {
-  id                Int      @id @default(autoincrement())
-  userId            Int
-  doctorId          Int
-  dateTime          DateTime
-  status            String   @default("pending")
+  id           Int            @id @default(autoincrement())
+  userId       Int
+  doctorId     Int
+  dateTime     DateTime
+  status       String         @default("pending")
+  doctor       User           @relation("DoctorBookings", fields: [doctorId], references: [id])
+  user         User           @relation("PatientBookings", fields: [userId], references: [id])
+  notification Notification[]
 
-  notification      Notification[]
-
-  user              User     @relation("PatientBookings", fields: [userId], references: [id])
-  doctor            User     @relation("DoctorBookings", fields: [doctorId], references: [id])
+  @@index([doctorId], map: "Booking_doctorId_fkey")
+  @@index([userId], map: "Booking_userId_fkey")
 }
-
-// model Post {
-//   id                Int      @id @default(autoincrement())
-//   title             String
-//   content           String
-//   category          String
-//   userId            Int
-//   createdAt         DateTime @default(now())
-
-//   user              User     @relation(fields: [userId], references: [id])
-//   replies           Reply[]
-// }
-
-// model Reply {
-//   id                Int      @id @default(autoincrement())
-//   content           String
-//   postId            Int
-//   userId            Int
-//   createdAt         DateTime @default(now())
-
-//   post              Post     @relation(fields: [postId], references: [id])
-//   user              User     @relation(fields: [userId], references: [id])
-// }
 
 model Notification {
-  id                Int      @id @default(autoincrement())
-  userId            Int
-  message           String
-  bookingId         Int?
-  isRead            Boolean  @default(false)
-  createdAt         DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  message   String
+  bookingId Int?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  booking   Booking? @relation(fields: [bookingId], references: [id])
 
-  booking           Booking? @relation(fields: [bookingId], references: [id])  
+  @@index([bookingId], map: "Notification_bookingId_fkey")
 }
-
-
-

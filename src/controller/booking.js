@@ -65,7 +65,6 @@ class BookingHandler {
                 createBooking
             })
         } catch (error) {
-            console.error(error.message)
             return res.status(500).json({ message : 'internal server error'})
         }
     }
@@ -85,8 +84,11 @@ class BookingHandler {
                             select : {
                                 id: true,
                                 name: true,
-                                email: true,
-                                profile: true
+                                email: true, 
+                                bio  : true,
+                                about : true,
+                                gender : true,
+                                categories : true
                             }
                         }
                     },
@@ -102,33 +104,42 @@ class BookingHandler {
                             select : {
                                 id: true,
                                 name: true,
-                                email: true,
-                                profile: true
+                                email: true, 
+                                bio  : true,
+                                about : true,
+                                gender : true,
+                                categories : true
                             }
                         }
                     }
                 })
             }
-
             return res.status(200).json({ 
                 message: 'get user Booking succesfully ',
                 bookings
               });
         } catch (error) {
-            console.error('Error updating booking status:', error);
             return res.status(500).json({ message: 'Server error' });
         }
     }
 
     async updatedBokingStatus( req = request, res = response ) {
+        const BOOKING_STATUSES = {
+            PENDING: 'pending',
+            CONFIRMED: 'confirmed',
+            COMPLETED: 'completed',
+            CANCELLED: 'cancelled',
+          };
+
+          const VALID_STATUSES = Object.values(BOOKING_STATUSES);
         try {
             const { id } = req.params;
             const { status } = req.body;
             const userId = req.user.id
 
-            if(!['pending', 'confrimen', 'completed', 'cancelled'].includes(status)) {
+            if (!VALID_STATUSES.includes(status)) {
                 return res.status(400).json({ message: 'Invalid status' });
-            }
+              }
 
             const boking = await db.booking.findUnique({
                 where : { id: parseInt(id)},
@@ -146,10 +157,55 @@ class BookingHandler {
                 return res.status(403).json({ message : 'not authorized to updated this booking'})
             }
 
+            if(status === 'confirmed') {
+                const userBook = await db.user.findUnique({
+                    where : { id : boking.userId},
+                    select : {statusBook : true}
+                })
+
+                if(userBook?.statusBook){
+                    return res.status(400).json({ message: "User already has an active confirmed booking" });
+                }
+
+                await db.user.update({
+                    where : { id : boking.userId },
+                    data : { statusBook : true}
+                })
+            }
+
             const updateBooking = await db.booking.update({
                 where : { id : parseInt(id)},
                 data : { status }
             })
+
+            if([BOOKING_STATUSES.COMPLETED, BOOKING_STATUSES.CANCELLED].includes(status)) {
+                await db.user.update({
+                    where : { id : boking.userId},
+                    data : { statusBook : false}
+                })
+            }
+
+            const updateUserBook = await db.booking.findFirst({
+                where : {
+                    userId: req.user.id,
+                    status: BOOKING_STATUSES.CONFIRMED,
+                    dateTime: {
+                      lt: new Date(Date.now() - 24 * 60 * 60 * 1000) 
+                    }
+                }
+            })
+
+            if(updateUserBook) {
+                await db.user.update({
+                    where : { id : boking.userId},
+                    data : { statusBook : false}
+                })
+
+                await db.booking.update({
+                    where: { id: updateBooking.id },
+                    data: { status: 'completed' }  
+                  });
+            }
 
             let message = '';
             switch (status) {
@@ -179,7 +235,7 @@ class BookingHandler {
                 booking: updateBooking 
               });
         } catch (error) {
-            
+            return res.status(500).json({ message: 'Internal server error' });
         }
     }
 
@@ -209,53 +265,67 @@ class BookingHandler {
         return res.status(200).json({ message: 'Booking deleted successfully' });
 
     } catch (error) {
-        console.error('Error deleting booking:', error);
         return res.status(500).json({ message: 'Internal server error' });
     }
     }
 
     async lovedCardDoctor( req = request, res = response ) {
         const loverId = parseInt(req.user.id)
-        const lovedId = parseInt(req.params.doctorId)
+        const lovedId = parseInt(req.params.id)
+
+        if (isNaN(loverId) || isNaN(lovedId)) {
+            return res.status(400).json({ message: "Invalid ID values" });
+          }
+
         try {
-            const existingLoved = await db.loveDoctor.findUnique({
-                where : { id : {
-                    loved : {
-                        loverId,
-                        lovedId
-                    }
-                }}
+            const doctor = await db.user.findUnique({
+                where : { id : lovedId, role : "doctor"}
             })
+
+            if (!doctor) {
+                return res.status(404).json({ message: "Doctor not found." });
+              }
+
+              const existingLoved = await db.loveDoctor.findUnique({
+                where: {
+                  userId_doctorId: {
+                    userId: loverId,
+                    doctorId: lovedId,
+                  }
+                } 
+              });
+          
 
             if(existingLoved) {
                 await db.loveDoctor.delete({
-                    where : { id : {
-                        loved : {
-                            loverId,
-                            lovedId
+                    where: {
+                        userId_doctorId: {
+                          userId: loverId,
+                          doctorId: lovedId
                         }
-                    }}
+                    }
                 })
 
                 return res.status(200).json({
                     status : false,
                     message : 'loved remove',
+                    loveStatus : false
                 })
             } else {
                 await db.loveDoctor.create({
                     data : {
-                        loverId,
-                        lovedId
+                        userId : loverId,
+                        doctorId :lovedId 
                     }
                 })
 
                 return res.status(201).json({
-                    loved: true,
-                    message: "Loved this doctor"
+                    status: true,
+                    message: "Loved this doctor",
+                    loveStatus : true
                 });
             }   
         } catch (error) {
-            console.error(error.message)
             return res.status(500).json({ message: 'Internal server error' });
         }
     }

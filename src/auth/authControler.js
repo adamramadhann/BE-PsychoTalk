@@ -42,8 +42,6 @@ class  AuthController {
         }
       });
 
-      console.log(req.body.gender)
-
       return res.status(201).json({
         status: true,
         message: "Registrasi berhasil",
@@ -51,33 +49,42 @@ class  AuthController {
       });
 
     } catch (error) {
-      console.error(error);
-      return res.status(500).json({
-        message: 'Internal server error',
-      });
+      return res.status(500).json({ message: 'Internal server error',});
     }
   }
   
   async register(req = request, res = response) {
-    const { name, email, password, role = "user", gender , bio, categories } = req.body;
-    console.log(req.body); 
-    console.log("Role received:", role);
-
-    console.log(req.body)
+    const { name, email, password, role = "user", gender , bio, categories = 'pasien', about = 'ini adalah pasien',   } = req.body;
 
     try {
-      if (!email || !password || !name || !role || !categories || !bio || !gender) {
+      if (!email || !password || !name || !categories || !bio || !gender ) {
         return res.status(400).json({
           status: false,
           message: "Semua field harus diisi",
         });
       }
 
+
+      if(role === "doctor" && !about) {
+        return res.status(400).json({
+          status: false,
+          message: "About wajib diisi oleh doctor",
+        });
+      }
+
       const maxWords = 60;
-      const bioWord = bio.trim().split('/\s+/').length;
+      const bioWord = bio.trim().split(/\s+/).length;
 
       if(bioWord > maxWords) {
         return res.status(500).json({message : `word more than ${maxWords} !`})
+      }
+
+
+      const maxWordsAbout = 100;
+      const bioWordAbout = (about || '').trim().split(/\s+/).length;
+
+      if(role === 'doctor' && bioWordAbout > maxWordsAbout) {
+        return res.status(500).json({message : `word more than ${maxWordsAbout} !`})
       }
   
       const existingUser = await db.user.findUnique({ where: { email } });
@@ -112,17 +119,18 @@ class  AuthController {
           gender,
           categories,
           bio,
+          about,
           verificationToken
         }
       });
   
       const verificationLink = `http://localhost:8000/api/verify-email?verificationToken=${verificationToken}`;
       const emailContent = `
-      <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+      <div style="font-family: Arial, sans-serif; background-color: #e0f2f1; padding: 20px; border: 2px solid #00796b;">
         <table align="center" width="100%" cellspacing="0" cellpadding="0" border="0" 
           style="max-width: 600px; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);">
           <tr>
-            <td style="padding: 20px; text-align: center; background-color: #007bff; color: #ffffff; 
+            <td style="padding: 20px; text-align: center; background-color: #00796b; color: #ffffff; 
               border-top-left-radius: 8px; border-top-right-radius: 8px;">
               <h2>Verifikasi Email Anda</h2>
             </td>
@@ -132,9 +140,9 @@ class  AuthController {
               <p>Halo <strong>${name}</strong>,</p>
               <p>Terima kasih telah mendaftar. Klik tombol di bawah untuk verifikasi email Anda:</p>
               <a href="${verificationLink}" style="display: inline-block; padding: 12px 20px; 
-                font-size: 16px; color: #ffffff; background-color: #007bff; text-decoration: none; 
+                font-size: 16px; color: #ffffff; background-color: #00796b; text-decoration: none; 
                 border-radius: 5px; margin-top: 10px;">Verifikasi Email</a>
-              <p style="margin-top: 20px; font-size: 14px; color: #777;">Jika Anda tidak merasa mendaftar, 
+              <p style="margin-top: 20px; font-size: 14px; color: #555;">Jika Anda tidak merasa mendaftar, 
                 abaikan email ini.</p>
             </td>
           </tr>
@@ -145,13 +153,15 @@ class  AuthController {
           </tr>
         </table>
       </div>
-    `;
-    
+    `;    
   
       try {
         await sendEmail(email, "Created Account", emailContent);
     } catch (error) {
-        console.error("Gagal mengirim email:", error);
+      return res.status(500).json({
+        message: 'Internal server error',
+        error: error.message
+      });
     }     
   
       return res.status(201).json({
@@ -161,7 +171,6 @@ class  AuthController {
       });
   
     } catch (error) {
-      console.error(error);
       return res.status(500).json({
         message: 'Internal server error',
         error: error.message
@@ -208,7 +217,6 @@ class  AuthController {
       });
       
     } catch (error) {
-      console.error(error);
       res.status(500).json({
         status: false,
         message: 'Internal server error',
@@ -247,7 +255,6 @@ class  AuthController {
         token: token
       }
   
-      // Modified fetch request with better error handling
       try {
         const response = await fetch(GAS_URL, {
           method: 'POST',
@@ -255,34 +262,17 @@ class  AuthController {
           body: JSON.stringify(payload)
         });
   
-        // Check if response is OK
         if (!response.ok) {
-          console.error("GAS request failed with status:", response.status);
           const responseText = await response.text();
-          console.error("Response content:", responseText.substring(0, 200) + "..."); // Log first 200 chars
           throw new Error(`GAS request failed with status ${response.status}`);
         }
   
-        // Try to parse as JSON, but handle non-JSON responses
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.includes("application/json")) {
-          const responseData = await response.json();
-          console.log("GAS Response:", responseData);
-        } else {
-          console.log("GAS Response (not JSON):", await response.text());
-        }
       } catch (error) {
-        console.error("Failed to send email via GAS:", error);
-        // Continue execution - don't let email failure break the flow
+        return res.status(500).json({ status: false, message: "Internal Server Error" });
       }
-  
-      console.log(email);
-      console.log(user.name);
-      console.log(token);
   
       return res.json({ status: true, message: "Link reset password telah dikirim ke email.", token: token });
     } catch (error) {
-      console.error(error.message);
       return res.status(500).json({ status: false, message: "Terjadi kesalahan saat memproses permintaan" });
     }
   }
@@ -377,7 +367,6 @@ class  AuthController {
         </div>
       `);
     } catch (error) {
-      console.error(error);
       return res.status(500).send("<p>Terjadi kesalahan, silakan coba lagi.</p>");
     }
   }
