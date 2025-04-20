@@ -22,10 +22,10 @@ model User {
   gender            String
   about             String
   bio               String
+  avatar            String
   categories        String?
   statusBook        Boolean      @default(false)
-  loveStatus        Boolean
-  // prifile           Profile?
+  loveStatus        Boolean      @default(false) 
 
   bookingsAsDoctor  Booking[]     @relation("DoctorBookings")
   bookingsAsPatient Booking[]     @relation("PatientBookings")
@@ -63,14 +63,15 @@ model PendingUser {
   bio               String
   categories        String
   gender            String
+  avatar            String
 }
 
 model Profile {
   id         Int     @id @default(autoincrement())
-  userId     Int    
+  userId     Int     @unique
   doctorId     Int    
   bio        String?
-  avatar     String
+  // avatar     String
   gender     String
   role       String?
   about      String
@@ -79,8 +80,8 @@ model Profile {
   // userProf   User?
 
 
-  user       User     @relation("DoctorLove", fields: [doctorId], references: [id])
-  doctor     User     @relation("UserLove", fields: [userId], references: [id])
+  user       User     @relation("UserLove", fields: [userId], references: [id])
+  doctor     User     @relation("DoctorLove", fields: [doctorId], references: [id])
 
   @@unique([userId, doctorId])
 }

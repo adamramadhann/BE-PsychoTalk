@@ -2,13 +2,14 @@
 import { Router } from "express";
 import { verifyEmail } from "../config/nodeMailer.js";
 import AuthController from "../auth/authControler.js";
+import { upload } from "../config/upload.js";
 
 const routeAuth = Router();
-routeAuth.post('/register', AuthController.register);
+routeAuth.post('/register', upload.single("avatar"), AuthController.register);
 routeAuth.post('/login', AuthController.login);
 routeAuth.get("/verify-email", verifyEmail); 
 routeAuth.post("/forgot-password", AuthController.requestResetPassword);
 routeAuth.post("/reset-password/:token", AuthController.resetPassword);
-routeAuth.post("/registerDoctor", AuthController.registerDoctor);
+// routeAuth.post("/registerDoctor", AuthController.registerDoctor);
 
 export default routeAuth;

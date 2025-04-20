@@ -1,10 +1,10 @@
 import { Router } from "express";
 import { authenticateToken } from "../auth/jwtUtils";
-import userControler from "./profile";
-import { upload } from "../config/upload";
+import userControler from "./profile"; 
 import BookingHandler from './booking'
 import formPost from "./formPost";
 import notifications from "./notifications"; 
+import { upload } from "../config/upload";
 
 const routeControler = new Router()
 

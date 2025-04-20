@@ -25,6 +25,7 @@ class userControler {
         }
     }
 
+
     async updatedProfile(req = request, res = response) {
         try {
             const { id } = req.user;
@@ -51,25 +52,22 @@ class userControler {
             if(gender) profileData.gender = gender;
             if(about) profileData.about = about;
 
-            const profile = await db.profile.upsert({
-                where : { userId : parseInt(id)},
-                update : profileData,
-                create : {
-                    userId: parseInt(id),
-                    bio : bio || '',
-                    avatar : avatar || '',
-                    categories : categories || null,
-                    role : role || "user",
-                    gender : gender,
-                    about : about || "ini adalah user",
-                }
-            })
+            await db.user.update({
+                where: { id: parseInt(id) },
+                data: {
+                  name,
+                  bio,
+                  gender,
+                  about,
+                  avatar,
+                  categories,
+                  role,
+                },
+              });
+              
 
             const updatedUser = await db.user.findUnique({
-                where : { id : parseInt(id)},
-                include : {
-                    profile : true
-                }
+                where : { id : parseInt(id)}
             })
 
             return res.status(200).json({
@@ -77,12 +75,16 @@ class userControler {
                 user: {
                   id: updatedUser.id,
                   name: updatedUser.name,
-                  email: updatedUser.email
-                },
-                profile: updatedUser.profile
+                  email: updatedUser.email,
+                  bio : updatedUser.bio,
+                  about : updatedUser.about,
+                  categories : updatedUser.categories,
+                  gender : updatedUser.gender
+                }
               });
               
         } catch (error) {
+            console.error(error.message)
             res.status(500).json({ message : 'internal server error'})
         }
     }
@@ -91,6 +93,7 @@ class userControler {
         try {
             const { categories } = req.query;
             const userId = parseInt(req.user.id);
+            console.log(userId)
     
             if (isNaN(userId)) {
                 return res.status(400).json({ message: "Invalid user ID" });
@@ -103,22 +106,15 @@ class userControler {
     
             if (categories) {
                 whereConditions.categories = categories; 
-            }
-    
+            }   
+            
             const doctors = await db.user.findMany({
-                where: whereConditions,
-                include: {
-                    loveDoc: {
-                        where: {
-                            userId: userId 
-                        },
-                        select: {
-                            loveStatus: true
-                        }
-                    },
-                    userLoveProf: true
+                where : {
+                    role : 'doctor'
                 }
             });
+
+            console.log(doctors)
     
             const formattedDoctors = doctors.map(doctor => ({
                 id: doctor.id,
@@ -127,11 +123,12 @@ class userControler {
                 categories: doctor.categories,
                 about: doctor.about,
                 bio: doctor.bio,
+                role: doctor.role,
                 gender: doctor.gender,
-                loveStatus: doctor.loveDoc && doctor.loveDoc.length > 0 
-                    ? doctor.loveDoc[0].loveStatus 
-                    : false
+                loveStatus: doctor.loveStatus,
+                avatar: doctor.avatar
             }));
+             
     
             return res.status(200).json({
                 status: true,
@@ -155,6 +152,7 @@ class userControler {
                 
             })
         } catch (error) {
+            console.error(error.message)
             res.status(500).json({ message : 'internal serveer error'})
         }
     }

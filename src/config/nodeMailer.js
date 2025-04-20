@@ -60,7 +60,8 @@ const transporter = nodemailer.createTransport({
           about: pendingUser.role === 'user' ? 'ini adalah user' : pendingUser.about,
           categories: pendingUser.categories ? 'categories' : pendingUser.categories,
           isVerified: true,
-          loveDoctorId : pendingUser.statusLove
+          loveDoctorId : pendingUser.statusLove,
+          avatar : pendingUser.avatar
         }
       });
   

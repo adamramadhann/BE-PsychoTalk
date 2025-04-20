@@ -10,13 +10,18 @@ class BookingHandler {
             const doctor = await db.user.findFirst({
                 where : {
                     id : parseInt(doctorId),
-                    role : 'doctor',
-                    isVerified : true
+                    role : 'doctor', 
                 }
+            }) 
+            
+            const users = await db.user.findUnique({
+                where : { id : req.user.id},
             })
 
             if(!doctor) {
-                return res.status(404).json({ message : 'doctor not found'})
+                return res.status(400).json({
+                    message : "doctor invalid"
+                })
             }
 
             const existingBooking = await db.booking.findFirst({
@@ -48,14 +53,20 @@ class BookingHandler {
             await db.notification.create({
                 data : {
                     userId : parseInt(doctorId),
-                    message : `you have a new booking request from ${req.user.name}`
+                    message : `you have a new booking request from email ${req.user.email}`
                 }
+            })
+
+            console.log({
+                user : req.user.email,
+                doctor : doctor.name,
+                users : users.name
             })
 
             await db.notification.create({
                 data : {
                     userId : parseInt(userId),
-                    message : 'you boking requesy has been sent to the doctor',
+                    message : `you boking requesy has been sent to the ${doctor.name}`,
                     bookingId : createBooking.id
                 }
             })
@@ -65,7 +76,8 @@ class BookingHandler {
                 createBooking
             })
         } catch (error) {
-            return res.status(500).json({ message : 'internal server error'})
+            console.error(error.message)
+            return res.status(500).json({ message : 'internal server error',error : error.message})
         }
     }
 
@@ -75,6 +87,8 @@ class BookingHandler {
             const { role } = req.user;
 
             let bookings;
+
+            console.log(role)
 
             if(role === 'doctor') {
                 bookings = await db.booking.findMany({
@@ -114,6 +128,7 @@ class BookingHandler {
                     }
                 })
             }
+
             return res.status(200).json({ 
                 message: 'get user Booking succesfully ',
                 bookings
@@ -286,46 +301,20 @@ class BookingHandler {
                 return res.status(404).json({ message: "Doctor not found." });
               }
 
-              const existingLoved = await db.loveDoctor.findUnique({
-                where: {
-                  userId_doctorId: {
-                    userId: loverId,
-                    doctorId: lovedId,
-                  }
-                } 
+              const statusLoveDoc = doctor.loveStatus
+u
+              const currentStatus = await db.loveDoctor.update({
+                where: { id : lovedId },
+                data : { loveStatus : !statusLoveDoc }
               });
-          
 
-            if(existingLoved) {
-                await db.loveDoctor.delete({
-                    where: {
-                        userId_doctorId: {
-                          userId: loverId,
-                          doctorId: lovedId
-                        }
-                    }
-                })
-
-                return res.status(200).json({
-                    status : false,
-                    message : 'loved remove',
-                    loveStatus : false
-                })
-            } else {
-                await db.loveDoctor.create({
-                    data : {
-                        userId : loverId,
-                        doctorId :lovedId 
-                    }
-                })
-
-                return res.status(201).json({
-                    status: true,
-                    message: "Loved this doctor",
-                    loveStatus : true
-                });
-            }   
+              return res.status(200).json({
+                status: statusLoveDoc,  
+                message: currentStatus.loveStatus,
+            });
+        
         } catch (error) {
+            console.error(error.message)
             return res.status(500).json({ message: 'Internal server error' });
         }
     }
