@@ -84,7 +84,6 @@ class userControler {
               });
               
         } catch (error) {
-            console.error(error.message)
             res.status(500).json({ message : 'internal server error'})
         }
     }
@@ -93,7 +92,6 @@ class userControler {
         try {
             const { categories } = req.query;
             const userId = parseInt(req.user.id);
-            console.log(userId)
     
             if (isNaN(userId)) {
                 return res.status(400).json({ message: "Invalid user ID" });
@@ -112,9 +110,7 @@ class userControler {
                 where : {
                     role : 'doctor'
                 }
-            });
-
-            console.log(doctors)
+            }); 
     
             const formattedDoctors = doctors.map(doctor => ({
                 id: doctor.id,
@@ -152,7 +148,6 @@ class userControler {
                 
             })
         } catch (error) {
-            console.error(error.message)
             res.status(500).json({ message : 'internal serveer error'})
         }
     }
