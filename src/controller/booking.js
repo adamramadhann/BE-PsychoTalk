@@ -43,7 +43,7 @@ class BookingHandler {
 
             const createBooking = await db.booking.create({
                 data : {
-                    userId : parseInt(userId),
+                    userId : parseInt(doctorId),
                     doctorId : parseInt(doctorId),
                     dateTime : new Date(dateTime),
                     status : 'pending' 
@@ -55,13 +55,7 @@ class BookingHandler {
                     userId : parseInt(doctorId),
                     message : `you have a new booking request from email ${req.user.email}`
                 }
-            })
-
-            console.log({
-                user : req.user.email,
-                doctor : doctor.name,
-                users : users.name
-            })
+            }) 
 
             await db.notification.create({
                 data : {
@@ -76,7 +70,6 @@ class BookingHandler {
                 createBooking
             })
         } catch (error) {
-            console.error(error.message)
             return res.status(500).json({ message : 'internal server error',error : error.message})
         }
     }
@@ -86,9 +79,9 @@ class BookingHandler {
             const userId = req.user.id;
             const { role } = req.user;
 
-            let bookings;
+            const book = await db.booking.findMany()
 
-            console.log(role)
+            let bookings;
 
             if(role === 'doctor') {
                 bookings = await db.booking.findMany({
@@ -102,7 +95,8 @@ class BookingHandler {
                                 bio  : true,
                                 about : true,
                                 gender : true,
-                                categories : true
+                                categories : true,
+                                avatar : true
                             }
                         }
                     },
@@ -122,7 +116,8 @@ class BookingHandler {
                                 bio  : true,
                                 about : true,
                                 gender : true,
-                                categories : true
+                                categories : true,
+                                avatar : true
                             }
                         }
                     }
@@ -314,7 +309,6 @@ u
             });
         
         } catch (error) {
-            console.error(error.message)
             return res.status(500).json({ message: 'Internal server error' });
         }
     }
