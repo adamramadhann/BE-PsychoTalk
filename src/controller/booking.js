@@ -43,7 +43,7 @@ class BookingHandler {
 
             const createBooking = await db.booking.create({
                 data : {
-                    userId : parseInt(doctorId),
+                    userId : parseInt(userId),
                     doctorId : parseInt(doctorId),
                     dateTime : new Date(dateTime),
                     status : 'pending' 
@@ -76,10 +76,8 @@ class BookingHandler {
 
     async getUserBooking(req = request, res = response) {
         try {
+            const { role } = req.user; 
             const userId = req.user.id;
-            const { role } = req.user;
-
-            const book = await db.booking.findMany()
 
             let bookings;
 
@@ -122,7 +120,7 @@ class BookingHandler {
                         }
                     }
                 })
-            }
+            } 
 
             return res.status(200).json({ 
                 message: 'get user Booking succesfully ',

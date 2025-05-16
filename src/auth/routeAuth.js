@@ -9,7 +9,6 @@ routeAuth.post('/register', upload.single("avatar"), AuthController.register);
 routeAuth.post('/login', AuthController.login);
 routeAuth.get("/verify-email", verifyEmail); 
 routeAuth.post("/forgot-password", AuthController.requestResetPassword);
-routeAuth.post("/reset-password/:token", AuthController.resetPassword);
-// routeAuth.post("/registerDoctor", AuthController.registerDoctor);
+routeAuth.post("/reset-password/:token", AuthController.resetPassword); 
 
 export default routeAuth;
