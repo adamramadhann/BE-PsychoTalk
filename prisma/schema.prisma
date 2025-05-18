@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -21,7 +21,7 @@ model User {
   resetTokenExpired DateTime?
   gender            String
   about             String
-  bio               String
+  bio               String      
   avatar            String
   categories        String?
   statusBook        Boolean      @default(false)
