@@ -43,7 +43,7 @@ class BookingHandler {
 
             const createBooking = await db.booking.create({
                 data : {
-                    userId : parseInt(doctorId),
+                    userId : parseInt(userId),
                     doctorId : parseInt(doctorId),
                     dateTime : new Date(dateTime),
                     status : 'pending' 
